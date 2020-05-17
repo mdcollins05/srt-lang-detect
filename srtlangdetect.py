@@ -5,7 +5,6 @@ import os.path
 import sys
 
 import srt
-
 from langdetect import detect_langs
 
 
@@ -14,9 +13,7 @@ def main():
 
     for srt in args.srt:
         if os.path.isfile(srt):
-            lang_detect_srt(
-                srt, args.summary, args.dry_run, args.quiet, args.verbose
-            )
+            lang_detect_srt(srt, args.summary, args.dry_run, args.quiet, args.verbose)
         elif os.path.isdir(srt):
             for root, dirs, files in os.walk(srt):
                 for file in files:
@@ -57,7 +54,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose):
         print("Trouble parsing subtitles in '{0}'".format(file))
         return False
 
-    full_subtitle_text = ''
+    full_subtitle_text = ""
 
     for i in range(len(original_subtitles)):
         full_subtitle_text += original_subtitles[i].content
