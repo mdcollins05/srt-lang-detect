@@ -4,6 +4,7 @@ import argparse
 import os.path
 import sys
 
+import iso639
 import srt
 from langdetect import detect_langs
 
@@ -19,7 +20,7 @@ def main():
                 for file in files:
                     if file.endswith(".srt"):
                         pass
-                        # parse_srt(
+                        # lang_detect_srt(
                         #     os.path.join(root, file),
                         #     args.summary,
                         #     args.dry_run,
@@ -59,6 +60,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose):
     for i in range(len(original_subtitles)):
         full_subtitle_text += original_subtitles[i].content
 
+    print(get_filename_language(file))
     print(detect_langs(full_subtitle_text))
 
     # if not dry_run:
@@ -118,6 +120,20 @@ def parse_args():
         help="The default is to do a dry-run. You must specify this option to rename files!",
     )
     argsparser.add_argument(
+        "--require-confidence",
+        "-c",
+        default=50,
+        type=check_valid_percentage,
+        help="Require a confidence percentage equal or higher than the provided value to rename (default 50) (valid range 1-100)"
+    )
+    two_three_group = argsparser.add_mutually_exclusive_group()
+    two_three_group.add_argument(
+        "--two-digit", "-2", action="store_true", help="Prefer 2 digit country code"
+    )
+    two_three_group.add_argument(
+        "--three-digit", "-3", action="store_true", help="Prefer 3 digit country code"
+    )
+    argsparser.add_argument(
         "--summary", "-s", action="store_true", help="Provide a summary of the changes"
     )
     v_q_group = argsparser.add_mutually_exclusive_group()
@@ -135,6 +151,32 @@ def parse_args():
     )
 
     return argsparser.parse_args()
+
+
+def check_valid_percentage(value):
+    ivalue = int(value)
+    if 1 <= ivalue <= 100:
+        raise argparse.ArgumentTypeError("{0} is an invalid value".format(value))
+    return ivalue
+
+
+def get_filename_language(full_path):
+    filename = os.path.basename(full_path).split(".")
+
+    forced = False
+    sub_lang = filename[-2].lower()
+
+    if sub_lang == "forced":
+        forced = True
+        sub_lang = filename[-3].lower()
+
+    if len(sub_lang) == 2 or len(sub_lang) == 3:
+        if not iso639.is_valid639_1(sub_lang) or not iso639.is_valid639_2(sub_lang):
+            sub_lang = "unknown"
+    else:
+        sub_lang = "unknown"
+
+    return (sub_lang, forced)
 
 
 if __name__ == "__main__":
