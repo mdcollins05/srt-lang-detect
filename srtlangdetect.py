@@ -196,14 +196,17 @@ def get_new_filename(full_path, language, file_language, forced):
     while True:
         if i == 1:
             if forced:
-                filename.insert(-3, i)
+                filename.insert(-3, str(i))
             else:
-                filename.insert(-2, i)
+                filename.insert(-2, str(i))
         elif i >= 2:
             if forced:
-                filename[-4] = i
+                filename[-4] = str(i)
             else:
-                filename[-3] = i
+                filename[-3] = str(i)
+
+        new_filename = os.path.join(directory, '.'.join(filename))
+
         if not os.path.exists(new_filename):
             break
         else:
