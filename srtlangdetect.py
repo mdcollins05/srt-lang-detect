@@ -20,7 +20,7 @@ def main():
 
     for srt in args.srt:
         if os.path.isfile(srt):
-            action_taken = lang_detect_srt(srt, args.summary, args.dry_run, args.quiet, args.verbose)
+            action_taken = lang_detect_srt(srt, args.summary, args.dry_run, args.quiet, args.verbose, args)
         elif os.path.isdir(srt):
             for root, dirs, files in os.walk(srt):
                 for file in files:
@@ -32,12 +32,13 @@ def main():
                         #     args.dry_run,
                         #     args.quiet,
                         #     args.verbose,
+                        #     args
                         # )
         else:
             print("Subtitle file/path '{0}' doesn't exist".format(args.srt))
 
 
-def lang_detect_srt(file, summary, dry_run, quiet, verbose):
+def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     if dry_run or verbose or summary:
         print("Parsing '{0}'...".format(file))
 
