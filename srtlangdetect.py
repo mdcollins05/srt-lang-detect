@@ -12,9 +12,15 @@ from langdetect import detect_langs
 def main():
     args = parse_args()
 
+    if len(args.srt) == 0:
+        print("No subtitle files or directories specified.")
+        return False
+
+    stats = {"renamed_files": 0}
+
     for srt in args.srt:
         if os.path.isfile(srt):
-            lang_detect_srt(srt, args.summary, args.dry_run, args.quiet, args.verbose)
+            action_taken = lang_detect_srt(srt, args.summary, args.dry_run, args.quiet, args.verbose)
         elif os.path.isdir(srt):
             for root, dirs, files in os.walk(srt):
                 for file in files:
@@ -29,10 +35,6 @@ def main():
                         # )
         else:
             print("Subtitle file/path '{0}' doesn't exist".format(args.srt))
-
-    if len(args.srt) == 0:
-        print()
-        print("No subtitle files or directories specified.")
 
 
 def lang_detect_srt(file, summary, dry_run, quiet, verbose):
@@ -60,8 +62,11 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose):
     for i in range(len(original_subtitles)):
         full_subtitle_text += original_subtitles[i].content
 
-    print(get_filename_language(file))
-    print(detect_langs(full_subtitle_text))
+    file_language = get_filename_language(file)
+    sub_detection_results = detect_langs(full_subtitle_text)
+
+    if verbose:
+        detect_langs_results(sub_detection_results)
 
     # if not dry_run:
     #     new_subtitle_file = list(srt.sort_and_reindex(new_subtitle_file))
@@ -128,10 +133,10 @@ def parse_args():
     )
     two_three_group = argsparser.add_mutually_exclusive_group()
     two_three_group.add_argument(
-        "--two-digit", "-2", action="store_true", help="Prefer 2 digit country code"
+        "--two-letter", "-2", action="store_true", help="Prefer 2 letter country code"
     )
     two_three_group.add_argument(
-        "--three-digit", "-3", action="store_true", help="Prefer 3 digit country code"
+        "--three-letter", "-3", action="store_true", help="Prefer 3 letter country code"
     )
     argsparser.add_argument(
         "--summary", "-s", action="store_true", help="Provide a summary of the changes"
@@ -171,7 +176,6 @@ def get_filename_language(full_path):
         sub_lang = filename[-3].lower()
 
     if len(sub_lang) == 2 or len(sub_lang) == 3:
-        print(sub_lang)
         if not iso639.is_valid639_1(sub_lang) and not iso639.is_valid639_2(sub_lang):
             sub_lang = "unknown"
     else:
@@ -179,6 +183,49 @@ def get_filename_language(full_path):
 
     return (sub_lang, forced)
 
+
+def to_2_letter_cc(cc):
+    if len(cc) == 2:
+        if iso639.is_valid639_1(cc):
+            return cc
+
+    if len(cc) == 3:
+        if iso639.is_valid639_2(cc):
+            return iso639.to_iso639_1(cc)
+
+    return False
+
+
+def to_3_letter_cc(cc):
+    if len(cc) == 2:
+        if iso639.is_valid639_1(cc):
+            return iso639.to_iso639_2(cc)
+
+    if len(cc) == 3:
+        if iso639.is_valid639_2(cc):
+            return cc
+
+    return False
+
+
+def to_lang_name(cc):
+    if len(cc) == 2:
+        if iso639.is_valid639_1(cc):
+            return iso639.to_name(cc)
+
+    if len(cc) == 3:
+        if iso639.is_valid639_2(cc):
+            return iso639.to_name(cc)
+
+    return False
+
+
+def detect_langs_results(results):
+    for result in results:
+        result = result.split(":")
+        lang_name = to_lang_name(result[0])
+        confidence = rount(int(result[1]) * 100, 2)
+        print("{0}: {1}%".format(lang_name, confidence))
 
 if __name__ == "__main__":
     sys.exit(main())
