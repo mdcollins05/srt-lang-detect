@@ -1,0 +1,2 @@
+srt == 3.0.0
+detectlang == 1.0.8
