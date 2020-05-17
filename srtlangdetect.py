@@ -62,50 +62,27 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose):
     for i in range(len(original_subtitles)):
         full_subtitle_text += original_subtitles[i].content
 
-    file_language = get_filename_language(file)
-    sub_detection_results = detect_langs(full_subtitle_text)
+    file_language, forced_subs = get_filename_language(file)
+    sub_detection_results = parse_detect_langs(detect_langs(full_subtitle_text))
 
     if verbose:
-        detect_langs_results(sub_detection_results)
+        file_language_long = to_lang_name(file_language[0])
+        if forced_subs:
+            print("Filename identified as {0} (Forced)".format(file_language_long))
+        else:
+            print("Filename identified as {0}".format(file_language_long))
 
-    # if not dry_run:
-    #     new_subtitle_file = list(srt.sort_and_reindex(new_subtitle_file))
-    #     if (
-    #         modified_line_count != 0
-    #         or removed_line_count != 0
-    #         or new_subtitle_file != original_subtitles
-    #     ):
-    #         print()  # Yes, a blank line
-    #         if modified_line_count == 0 and removed_line_count == 0 and not quiet:
-    #             print(
-    #                 "Only changes to sorting and indexing found; No changes to subtitles detected."
-    #             )
-    #         if not quiet or verbose:
-    #             print("Saving subtitle file {0}...".format(file))
-    #             print()
-    #         with open(file, "w", encoding="utf-8") as filehandler:
-    #             filehandler.write(srt.compose(new_subtitle_file))
-    #     else:
-    #         if not quiet or verbose:
-    #             print("No changes to save")
-    #             print()
+        print("Subtitles identified as:")
+        detect_langs_pretty(sub_detection_results)
 
-    # if summary or verbose:
-    #     if dry_run:
-    #         if verbose:
-    #             print()
-    #         print(
-    #             "Summary: {0} Lines to be modified; {1} Lines to be removed; '{2}'".format(
-    #                 modified_line_count, removed_line_count, file
-    #             )
-    #         )
-    #     else:
-    #         print(
-    #             "Summary: {0} Lines modified; {1} Lines removed; '{2}'".format(
-    #                 modified_line_count, removed_line_count, file
-    #             )
-    #         )
-    #     print()
+    print(sub_detection_results)
+    new_language = sub_detection_results[0][0]
+
+    new_filename = get_new_filename(file, new_language, file_language, forced_subs)
+
+    # if sub_detection_results[0][0] >= args.require_confidence:
+    #     # rename file
+    #     pass
 
     return True
 
@@ -184,6 +161,19 @@ def get_filename_language(full_path):
     return (sub_lang, forced)
 
 
+def get_new_filename(full_path, language, file_language, forced):
+    directory = os.path.dirname(full_path)
+    filename = os.path.basename(full_path).split(".")
+
+    if to_2_letter_cc(file_language) != language:
+        if forced:
+            filename[-3] = language
+        else:
+            filename[-2] = language
+
+    return os.path.join(directory, filename)
+
+
 def to_2_letter_cc(cc):
     if len(cc) == 2:
         if iso639.is_valid639_1(cc):
@@ -220,12 +210,24 @@ def to_lang_name(cc):
     return False
 
 
-def detect_langs_results(results):
+def parse_detect_langs(results):
+    new_results = []
+    for result in results:
+        result = str(result).split(":")
+        lang_name = to_2_letter_cc(result[0])
+        confidence = round(float(result[1]) * 100, 2)
+        new_results.append((lang_name, confidence))
+
+    return new_results
+
+
+def detect_langs_pretty(results):
     for result in results:
         result = str(result).split(":")
         lang_name = to_lang_name(result[0])
         confidence = round(float(result[1]) * 100, 2)
         print("{0}: {1}%".format(lang_name, confidence))
+
 
 if __name__ == "__main__":
     sys.exit(main())
