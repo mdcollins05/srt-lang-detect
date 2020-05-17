@@ -64,22 +64,23 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose):
 
     file_language, forced_subs = get_filename_language(file)
     sub_detection_results = parse_detect_langs(detect_langs(full_subtitle_text))
-
     if verbose:
-        file_language_long = to_lang_name(file_language[0])
+        file_language_long = to_lang_name(file_language)
+        if not file_language_long:
+            file_language_long = file_language
+
         if forced_subs:
-            print("Filename identified as {0} (Forced)".format(file_language_long))
+            print("Filename identified as: {0} (Forced)".format(file_language_long))
         else:
-            print("Filename identified as {0}".format(file_language_long))
+            print("Filename identified as: {0}".format(file_language_long))
 
         print("Subtitles identified as:")
         detect_langs_pretty(sub_detection_results)
 
-    print(sub_detection_results)
     new_language = sub_detection_results[0][0]
 
     new_filename = get_new_filename(file, new_language, file_language, forced_subs)
-
+    print(new_filename)
     # if sub_detection_results[0][0] >= args.require_confidence:
     #     # rename file
     #     pass
@@ -154,9 +155,9 @@ def get_filename_language(full_path):
 
     if len(sub_lang) == 2 or len(sub_lang) == 3:
         if not iso639.is_valid639_1(sub_lang) and not iso639.is_valid639_2(sub_lang):
-            sub_lang = "unknown"
+            sub_lang = "Unknown"
     else:
-        sub_lang = "unknown"
+        sub_lang = "Unknown"
 
     return (sub_lang, forced)
 
@@ -165,13 +166,23 @@ def get_new_filename(full_path, language, file_language, forced):
     directory = os.path.dirname(full_path)
     filename = os.path.basename(full_path).split(".")
 
-    if to_2_letter_cc(file_language) != language:
-        if forced:
-            filename[-3] = language
-        else:
-            filename[-2] = language
+    adjusted_for_unknown = False
 
-    return os.path.join(directory, filename)
+    if file_language != language:
+        if forced:
+            if file_language == "Unknown" and not adjusted_for_unknown:
+                filename.insert(-2, language)
+                adjusted_for_unknown = True
+            else:
+                filename[-3] = language
+        else:
+            if file_language == "Unknown" and not adjusted_for_unknown:
+                filename.insert(-1, language)
+                adjusted_for_unknown = True
+            else:
+                filename[-2] = language
+
+    return os.path.join(directory, '.'.join(filename))
 
 
 def to_2_letter_cc(cc):
@@ -199,15 +210,21 @@ def to_3_letter_cc(cc):
 
 
 def to_lang_name(cc):
+    if is_valid_cc(cc):
+        return iso639.to_name(cc)
+    else:
+        return False
+
+
+def is_valid_cc(cc):
     if len(cc) == 2:
         if iso639.is_valid639_1(cc):
-            return iso639.to_name(cc)
-
-    if len(cc) == 3:
+            return True
+    elif len(cc) == 3:
         if iso639.is_valid639_2(cc):
-            return iso639.to_name(cc)
-
-    return False
+            return True
+    else:
+        return False
 
 
 def parse_detect_langs(results):
@@ -223,9 +240,8 @@ def parse_detect_langs(results):
 
 def detect_langs_pretty(results):
     for result in results:
-        result = str(result).split(":")
         lang_name = to_lang_name(result[0])
-        confidence = round(float(result[1]) * 100, 2)
+        confidence = result[1]
         print("{0}: {1}%".format(lang_name, confidence))
 
 
