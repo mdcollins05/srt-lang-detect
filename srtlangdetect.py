@@ -222,9 +222,9 @@ def to_lang_name(cc):
 
 def detect_langs_results(results):
     for result in results:
-        result = result.split(":")
+        result = str(result).split(":")
         lang_name = to_lang_name(result[0])
-        confidence = rount(int(result[1]) * 100, 2)
+        confidence = round(float(result[1]) * 100, 2)
         print("{0}: {1}%".format(lang_name, confidence))
 
 if __name__ == "__main__":
