@@ -14,13 +14,14 @@ def main():
 
     for srt in args.srt:
         if os.path.isfile(srt):
-            parse_srt(
+            lang_detect_srt(
                 srt, args.summary, args.dry_run, args.quiet, args.verbose
             )
         elif os.path.isdir(srt):
             for root, dirs, files in os.walk(srt):
                 for file in files:
                     if file.endswith(".srt"):
+                        pass
                         # parse_srt(
                         #     os.path.join(root, file),
                         #     args.summary,
