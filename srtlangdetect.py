@@ -2,6 +2,7 @@
 
 import argparse
 import os.path
+import os.rename
 import sys
 
 import iso639
@@ -87,10 +88,13 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         new_language = to_3_letter_lang(new_language)
 
     new_filename = get_new_filename(file, new_language, file_language, forced_subs)
-    print(new_filename)
-    # if new_language_confidence >= args.require_confidence:
-    #     # rename file
-    #     pass
+
+    if int(new_language_confidence) >= args.require_confidence:
+        if dry_run or summary:
+            if verbose:
+                print("Confidence of {0} equal or higher than required value to rename ({1})".format(new_language_confidence, args.require_confidence))
+            print("Would rename '{0}' to '{1}'".format(os.path.basename(file), os.path.basename(new_filename)))
+
 
     return True
 
