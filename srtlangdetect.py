@@ -78,15 +78,16 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose):
         detect_langs_pretty(sub_detection_results)
 
     new_language = sub_detection_results[0][0]
+    new_language_confidence = sub_detection_results[0][1]
 
     if args.two_letter:
-        new_language = to_2_letter_cc(new_language)
+        new_language = to_2_letter_lang(new_language)
     elif args.three_letter:
-        new_language = to_3_letter_cc(new_language)
+        new_language = to_3_letter_lang(new_language)
 
     new_filename = get_new_filename(file, new_language, file_language, forced_subs)
     print(new_filename)
-    # if sub_detection_results[0][0] >= args.require_confidence:
+    # if new_language_confidence >= args.require_confidence:
     #     # rename file
     #     pass
 
@@ -211,43 +212,43 @@ def get_new_filename(full_path, language, file_language, forced):
     return os.path.join(directory, '.'.join(filename))
 
 
-def to_2_letter_cc(cc):
-    if len(cc) == 2:
-        if iso639.is_valid639_1(cc):
-            return cc
+def to_2_letter_lang(lang):
+    if len(lang) == 2:
+        if iso639.is_valid639_1(lang):
+            return lang
 
-    if len(cc) == 3:
-        if iso639.is_valid639_2(cc):
-            return iso639.to_iso639_1(cc)
-
-    return False
-
-
-def to_3_letter_cc(cc):
-    if len(cc) == 2:
-        if iso639.is_valid639_1(cc):
-            return iso639.to_iso639_2(cc)
-
-    if len(cc) == 3:
-        if iso639.is_valid639_2(cc):
-            return cc
+    if len(lang) == 3:
+        if iso639.is_valid639_2(lang):
+            return iso639.to_iso639_1(lang)
 
     return False
 
 
-def to_lang_name(cc):
-    if is_valid_cc(cc):
-        return iso639.to_name(cc)
+def to_3_letter_lang(lang):
+    if len(lang) == 2:
+        if iso639.is_valid639_1(lang):
+            return iso639.to_iso639_2(lang)
+
+    if len(lang) == 3:
+        if iso639.is_valid639_2(lang):
+            return lang
+
+    return False
+
+
+def to_lang_name(lang):
+    if is_valid_lang(lang):
+        return iso639.to_name(lang)
     else:
         return False
 
 
-def is_valid_cc(cc):
-    if len(cc) == 2:
-        if iso639.is_valid639_1(cc):
+def is_valid_lang(lang):
+    if len(lang) == 2:
+        if iso639.is_valid639_1(lang):
             return True
-    elif len(cc) == 3:
-        if iso639.is_valid639_2(cc):
+    elif len(lang) == 3:
+        if iso639.is_valid639_2(lang):
             return True
     else:
         return False
@@ -257,7 +258,7 @@ def parse_detect_langs(results):
     new_results = []
     for result in results:
         result = str(result).split(":")
-        lang_name = to_2_letter_cc(result[0])
+        lang_name = to_2_letter_lang(result[0])
         confidence = round(float(result[1]) * 100, 2)
         new_results.append((lang_name, confidence))
 
