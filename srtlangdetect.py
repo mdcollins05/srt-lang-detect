@@ -171,7 +171,8 @@ def get_filename_language(full_path):
         sub_lang = filename[-3].lower()
 
     if len(sub_lang) == 2 or len(sub_lang) == 3:
-        if not iso639.is_valid639_1(sub_lang) or not iso639.is_valid639_2(sub_lang):
+        print(sub_lang)
+        if not iso639.is_valid639_1(sub_lang) and not iso639.is_valid639_2(sub_lang):
             sub_lang = "unknown"
     else:
         sub_lang = "unknown"
