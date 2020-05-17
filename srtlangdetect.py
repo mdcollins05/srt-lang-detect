@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import os.path
-import os.rename
+import os
 import sys
 
 import iso639
@@ -21,7 +20,9 @@ def main():
 
     for srt in args.srt:
         if os.path.isfile(srt):
-            action_taken = lang_detect_srt(srt, args.summary, args.dry_run, args.quiet, args.verbose, args)
+            action_taken = lang_detect_srt(
+                srt, args.summary, args.dry_run, args.quiet, args.verbose, args
+            )
         elif os.path.isdir(srt):
             for root, dirs, files in os.walk(srt):
                 for file in files:
@@ -87,14 +88,23 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     elif args.three_letter:
         new_language = to_3_letter_lang(new_language)
 
-    new_filename = get_new_filename(file, new_language, file_language, forced_subs)
+    new_filename = get_new_filename(
+        file, new_language, file_language, forced_subs, verbose
+    )
 
     if int(new_language_confidence) >= args.require_confidence:
         if dry_run or summary:
             if verbose:
-                print("Confidence of {0} equal or higher than required value to rename ({1})".format(new_language_confidence, args.require_confidence))
-            print("Would rename '{0}' to '{1}'".format(os.path.basename(file), os.path.basename(new_filename)))
-
+                print(
+                    "Confidence of {0} equal or higher than required value to rename ({1})".format(
+                        int(new_language_confidence), args.require_confidence
+                    )
+                )
+            print(
+                "Would rename '{0}' to '{1}'".format(
+                    os.path.basename(file), os.path.basename(new_filename)
+                )
+            )
 
     return True
 
@@ -118,7 +128,7 @@ def parse_args():
         "-c",
         default=50,
         type=check_valid_percentage,
-        help="Require a confidence percentage equal or higher than the provided value to rename (default 50) (valid range 1-100)"
+        help="Require a confidence percentage equal or higher than the provided value to rename (default 50) (valid range 1-100)",
     )
     two_three_group = argsparser.add_mutually_exclusive_group()
     two_three_group.add_argument(
@@ -173,7 +183,7 @@ def get_filename_language(full_path):
     return (sub_lang, forced)
 
 
-def get_new_filename(full_path, language, file_language, forced):
+def get_new_filename(full_path, language, file_language, forced, verbose):
     directory = os.path.dirname(full_path)
     filename = os.path.basename(full_path).split(".")
 
@@ -193,9 +203,8 @@ def get_new_filename(full_path, language, file_language, forced):
             else:
                 filename[-2] = language
 
-    new_filename = os.path.join(directory, '.'.join(filename))
-
-    # We do not want to overwrite any existing files, so increment by 1 until we find a filename not taken
+    # We do not want to overwrite any existing files, so check if a file exists on disk with the proposed name
+    # and increment if it already does
     i = 0
     while True:
         if i == 1:
@@ -209,15 +218,16 @@ def get_new_filename(full_path, language, file_language, forced):
             else:
                 filename[-3] = str(i)
 
-        new_filename = os.path.join(directory, '.'.join(filename))
+        new_filename = os.path.join(directory, ".".join(filename))
 
         if not os.path.exists(new_filename):
+            print("{0} does not exist on disk".format(os.path.basename(new_filename)))
             break
         else:
+            print("{0} already exists".format(os.path.basename(new_filename)))
             i += 1
 
-
-    return os.path.join(directory, '.'.join(filename))
+    return os.path.join(directory, ".".join(filename))
 
 
 def to_2_letter_lang(lang):
