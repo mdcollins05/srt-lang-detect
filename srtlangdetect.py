@@ -79,6 +79,11 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose):
 
     new_language = sub_detection_results[0][0]
 
+    if args.two_letter:
+        new_language = to_2_letter_cc(new_language)
+    elif args.three_letter:
+        new_language = to_3_letter_cc(new_language)
+
     new_filename = get_new_filename(file, new_language, file_language, forced_subs)
     print(new_filename)
     # if sub_detection_results[0][0] >= args.require_confidence:
@@ -181,6 +186,27 @@ def get_new_filename(full_path, language, file_language, forced):
                 adjusted_for_unknown = True
             else:
                 filename[-2] = language
+
+    new_filename = os.path.join(directory, '.'.join(filename))
+
+    # We do not want to overwrite any existing files, so increment by 1 until we find a filename not taken
+    i = 0
+    while True:
+        if i == 1:
+            if forced:
+                filename.insert(-3, i)
+            else:
+                filename.insert(-2, i)
+        elif i >= 2:
+            if forced:
+                filename[-4] = i
+            else:
+                filename[-3] = i
+        if not os.path.exists(new_filename):
+            break
+        else:
+            i += 1
+
 
     return os.path.join(directory, '.'.join(filename))
 
