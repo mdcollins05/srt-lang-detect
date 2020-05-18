@@ -2,6 +2,8 @@
 
 Automatically detect the language of the subtitles in a file and rename if necessary.
 
+This script can also change from 2 to 3 letter language codes or back. It will also re-number subtitle files if possible. (See the `--two-letter` or `--three-letter` arguments)
+
 ## Installation
 
 1. Clone the repo
