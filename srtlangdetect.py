@@ -66,6 +66,11 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     for i in range(len(original_subtitles)):
         full_subtitle_text += original_subtitles[i].content
 
+    if len(original_subtitles) == 0:
+        if verbose or summary:
+            print("No subtitles found in {0}".format(file))
+        return True
+
     file_language, forced_subs = get_filename_language(file)
     sub_detection_results = parse_detect_langs(detect_langs(full_subtitle_text))
     if verbose:
@@ -99,7 +104,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
 
     if new_filename == file:
         if verbose or summary:
-            print("No changes neccessary to {0}".format(os.path.basename(file)))
+            print("No changes neccessary to {0}".format(file))
         return True
 
     if int(new_language_confidence) >= args.require_confidence:
@@ -112,7 +117,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                 )
             print(
                 "Would rename '{0}' to '{1}'".format(
-                    os.path.basename(file), os.path.basename(new_filename)
+                    file, new_filename
                 )
             )
         if not dry_run:
@@ -120,7 +125,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
             if verbose or summary:
                 print(
                     "Renamed '{0}' to '{1}'".format(
-                        os.path.basename(file), os.path.basename(new_filename)
+                        file, new_filename
                     )
                 )
 
