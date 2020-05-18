@@ -235,6 +235,9 @@ def get_new_filename(full_path, language, file_language, forced, verbose):
 
         new_filename = os.path.join(directory, ".".join(filename))
 
+        if full_path == new_filename:
+            break
+
         if not os.path.exists(new_filename):
             print("{0} does not exist on disk".format(os.path.basename(new_filename)))
             break
