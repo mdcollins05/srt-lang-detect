@@ -111,7 +111,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                 )
             )
         if not dry_run:
-            #os.rename(file, new_filename)
+            os.rename(file, new_filename)
             if verbose or summary:
                 print(
                     "Renamed '{0}' to '{1}'".format(
