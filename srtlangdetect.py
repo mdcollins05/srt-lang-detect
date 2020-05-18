@@ -27,15 +27,14 @@ def main():
             for root, dirs, files in os.walk(srt):
                 for file in files:
                     if file.endswith(".srt"):
-                        pass
-                        # lang_detect_srt(
-                        #     os.path.join(root, file),
-                        #     args.summary,
-                        #     args.dry_run,
-                        #     args.quiet,
-                        #     args.verbose,
-                        #     args
-                        # )
+                        lang_detect_srt(
+                            os.path.join(root, file),
+                            args.summary,
+                            args.dry_run,
+                            args.quiet,
+                            args.verbose,
+                            args
+                        )
         else:
             print("Subtitle file/path '{0}' doesn't exist".format(srt))
 
