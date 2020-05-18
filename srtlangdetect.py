@@ -37,7 +37,7 @@ def main():
                         #     args
                         # )
         else:
-            print("Subtitle file/path '{0}' doesn't exist".format(args.srt))
+            print("Subtitle file/path '{0}' doesn't exist".format(srt))
 
 
 def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
@@ -193,7 +193,7 @@ def get_filename_language(full_path):
 
 def get_new_filename(full_path, language, file_language, forced, verbose):
     # Our file output should look like:
-    # showormovie.(count).(lang).(forced).srt
+    # showormovietitle.(count).(lang).(forced).srt
     # count and forced may or may not be included as needed
     directory = os.path.dirname(full_path)
     filename = os.path.basename(full_path).split(".")
