@@ -92,6 +92,11 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         file, new_language, file_language, forced_subs, verbose
     )
 
+    if new_filename == file:
+        if verbose or summary:
+            print("No changes neccessary to {0}".format(os.path.basename(file)))
+        return True
+
     if int(new_language_confidence) >= args.require_confidence:
         if dry_run:
             if verbose:
