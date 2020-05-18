@@ -41,7 +41,7 @@ def main():
 
 
 def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
-    if dry_run or verbose or summary:
+    if dry_run or verbose:
         print("Parsing '{0}'...".format(file))
 
     try:
@@ -93,7 +93,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     )
 
     if int(new_language_confidence) >= args.require_confidence:
-        if dry_run or summary:
+        if dry_run:
             if verbose:
                 print(
                     "Confidence of {0} equal or higher than required value to rename ({1})".format(
@@ -105,6 +105,14 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                     os.path.basename(file), os.path.basename(new_filename)
                 )
             )
+        if not dry_run:
+            #os.rename(file, new_filename)
+            if verbose or summary:
+                print(
+                    "Renamed '{0}' to '{1}'".format(
+                        os.path.basename(file), os.path.basename(new_filename)
+                    )
+                )
 
     return True
 
@@ -184,39 +192,37 @@ def get_filename_language(full_path):
 
 
 def get_new_filename(full_path, language, file_language, forced, verbose):
+    # Our file output should look like:
+    # showormovie.(count).(lang).(forced).srt
+    # count and forced may or may not be included as needed
     directory = os.path.dirname(full_path)
     filename = os.path.basename(full_path).split(".")
 
-    adjusted_for_unknown = False
+    index = -3
+
+    if not forced:
+        index = -2
 
     if file_language != language:
-        if forced:
-            if file_language == "Unknown" and not adjusted_for_unknown:
-                filename.insert(-2, language)
-                adjusted_for_unknown = True
-            else:
-                filename[-3] = language
+        if file_language == "Unknown":
+            filename.insert(index+1 , language)
+            adjusted_for_unknown = True
         else:
-            if file_language == "Unknown" and not adjusted_for_unknown:
-                filename.insert(-1, language)
-                adjusted_for_unknown = True
-            else:
-                filename[-2] = language
+            filename[index] = language
 
     # We do not want to overwrite any existing files, so check if a file exists on disk with the proposed name
     # and increment if it already does
     i = 0
+
     while True:
         if i == 1:
-            if forced:
-                filename.insert(-3, str(i))
+            index -= 1
+            if len(filename[index]) == 1 and filename[index].isdigit():
+                filename[index] = str(i)
             else:
-                filename.insert(-2, str(i))
+                filename.insert(index+1, str(i))
         elif i >= 2:
-            if forced:
-                filename[-4] = str(i)
-            else:
-                filename[-3] = str(i)
+            filename[index] = str(i)
 
         new_filename = os.path.join(directory, ".".join(filename))
 
