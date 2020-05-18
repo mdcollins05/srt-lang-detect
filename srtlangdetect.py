@@ -148,10 +148,10 @@ def parse_args():
     )
     two_three_group = argsparser.add_mutually_exclusive_group()
     two_three_group.add_argument(
-        "--two-letter", "-2", action="store_true", help="Prefer 2 letter country code"
+        "--two-letter", "-2", action="store_true", help="Prefer 2 letter language code"
     )
     two_three_group.add_argument(
-        "--three-letter", "-3", action="store_true", help="Prefer 3 letter country code"
+        "--three-letter", "-3", action="store_true", help="Prefer 3 letter language code"
     )
     argsparser.add_argument(
         "--summary", "-s", action="store_true", help="Provide a summary of the changes"
