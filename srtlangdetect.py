@@ -223,7 +223,7 @@ def get_new_filename(full_path, language, file_language, forced, verbose):
             if i == 0:
                 index -= 1
                 if len(filename[index]) == 1 and filename[index].isdigit():
-                    filename[index] = str(i)
+                    del filename[index]
             elif i == 1:
                 filename.insert(index+1, str(i))
             elif i >= 2:
