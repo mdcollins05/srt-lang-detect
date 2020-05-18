@@ -220,12 +220,12 @@ def get_new_filename(full_path, language, file_language, forced, verbose):
         i = 0
 
         while True:
-            if i == 1:
+            if i == 0:
                 index -= 1
                 if len(filename[index]) == 1 and filename[index].isdigit():
                     filename[index] = str(i)
-                else:
-                    filename.insert(index+1, str(i))
+            elif i == 1:
+                filename.insert(index+1, str(i))
             elif i >= 2:
                 filename[index] = str(i)
 
