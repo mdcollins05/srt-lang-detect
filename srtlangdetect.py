@@ -215,28 +215,28 @@ def get_new_filename(full_path, language, file_language, forced, verbose):
         else:
             filename[index] = language
 
-    # We do not want to overwrite any existing files, so check if a file exists on disk with the proposed name
-    # and increment if it already does
-    i = 0
+        # We do not want to overwrite any existing files, so check if a file exists on disk with the proposed name
+        # and increment if it already does
+        i = 0
 
-    while True:
-        if i == 1:
-            index -= 1
-            if len(filename[index]) == 1 and filename[index].isdigit():
+        while True:
+            if i == 1:
+                index -= 1
+                if len(filename[index]) == 1 and filename[index].isdigit():
+                    filename[index] = str(i)
+                else:
+                    filename.insert(index+1, str(i))
+            elif i >= 2:
                 filename[index] = str(i)
+
+            new_filename = os.path.join(directory, ".".join(filename))
+
+            if not os.path.exists(new_filename):
+                print("{0} does not exist on disk".format(os.path.basename(new_filename)))
+                break
             else:
-                filename.insert(index+1, str(i))
-        elif i >= 2:
-            filename[index] = str(i)
-
-        new_filename = os.path.join(directory, ".".join(filename))
-
-        if not os.path.exists(new_filename):
-            print("{0} does not exist on disk".format(os.path.basename(new_filename)))
-            break
-        else:
-            print("{0} already exists".format(os.path.basename(new_filename)))
-            i += 1
+                print("{0} already exists".format(os.path.basename(new_filename)))
+                i += 1
 
     return os.path.join(directory, ".".join(filename))
 
