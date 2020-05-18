@@ -35,6 +35,8 @@ def main():
                             args.verbose,
                             args
                         )
+                        if args.verbose or args.summary:
+                            print()
         else:
             print("Subtitle file/path '{0}' doesn't exist".format(srt))
 
