@@ -73,18 +73,22 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
 
     file_language, forced_subs = get_filename_language(file)
     sub_detection_results = parse_detect_langs(detect_langs(full_subtitle_text))
-    if verbose:
+    if verbose or summary:
         file_language_long = to_lang_name(file_language)
         if not file_language_long:
             file_language_long = file_language
 
-        if forced_subs:
-            print("Filename identified as: {0} (Forced)".format(file_language_long))
-        else:
-            print("Filename identified as: {0}".format(file_language_long))
+        if verbose:
+            if forced_subs:
+                print("Filename identified as: {0} (Forced)".format(file_language_long))
+            else:
+                print("Filename identified as: {0}".format(file_language_long))
 
-        print("Subtitles identified as:")
-        detect_langs_pretty(sub_detection_results)
+            print("Subtitles identified as:")
+            detect_langs_pretty(sub_detection_results)
+
+        #if summary:
+        #    print("Subtitles identified as: {0} ({1}%)".format(to_lang_name(sub_detection_results[0][0]), sub_detection_results[0][1]))
 
     new_language = sub_detection_results[0][0]
     new_language_confidence = sub_detection_results[0][1]
@@ -92,6 +96,11 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     # Try not to change the language in the filename if we can avoid it
     if file_language != "Unknown":
         new_language = file_language
+
+    if new_language is False:
+        if verbose or summary:
+            print("Cannot detect language of the subtitles in {0}".format(file))
+        return True
 
     if args.two_letter:
         new_language = to_2_letter_lang(new_language)
@@ -245,10 +254,12 @@ def get_new_filename(full_path, language, file_language, forced, verbose):
             break
 
         if not os.path.exists(new_filename):
-            print("{0} does not exist on disk".format(os.path.basename(new_filename)))
+            if verbose:
+                print("{0} does not exist on disk".format(os.path.basename(new_filename)))
             break
         else:
-            print("{0} already exists".format(os.path.basename(new_filename)))
+            if verbose:
+                print("{0} already exists".format(os.path.basename(new_filename)))
             i += 1
 
     return os.path.join(directory, ".".join(filename))
@@ -309,7 +320,10 @@ def parse_detect_langs(results):
 
 def detect_langs_pretty(results):
     for result in results:
-        lang_name = to_lang_name(result[0])
+        if result[0] is False:
+            lang_name = "Unknown"
+        else:
+            lang_name = to_lang_name(result[0])
         confidence = result[1]
         print("{0}: {1}%".format(lang_name, confidence))
 

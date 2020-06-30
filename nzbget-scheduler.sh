@@ -11,10 +11,10 @@
 ##############################################################################
 ### OPTIONS                                                                ###
 
-# Path to directory that contains the srtlangedit.py file
+# Path to directory that contains the srtlangdetect.py file
 #
 # No trailing slash
-#SRTAUTOEDIT_PATH=
+#SRTLANGDETECT_PATH=
 
 # Script arguments
 #
@@ -39,7 +39,7 @@ read -r -a script_args <<< "$NZBPO_SCRIPT_ARGS"
 read -r -a scan_directories <<< "$NZBPO_SCAN_DIRECTORIES"
 
 echo "Running scheduled srt-lang-detect on files..."
-find "${scan_directories[@]}" -name \*.srt -cmin "-${NZBPO_MAX_AGE}" -exec "${NZBPO_SRTAUTOEDIT_PATH}/srtlangedit.py" -r "${script_args[@]}" "{}" \;
+find "${scan_directories[@]}" -name \*.srt -cmin "-${NZBPO_MAX_AGE}" -exec "${NZBPO_SRTLANGDETECT_PATH}/srtlangdetect.py" -r "${script_args[@]}" "{}" \;
 
 # Exit good no matter what
 exit 93

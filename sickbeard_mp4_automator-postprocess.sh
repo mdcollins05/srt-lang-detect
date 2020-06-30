@@ -5,12 +5,11 @@ set -euo pipefail
 
 SCRIPT_PATH="/home/matt/srt-lang-detect" #EDIT ME!
 
-# shellcheck disable=SC2001
-files=$(echo "${MH_FILES%%,*}" | sed 's/[]"[]//g')
+files="${SMA_FILES:=${MH_FILES:=[]}}" # Support old and new env variable from Sickbeard MP4 Automator
 
-for file in "${files%%.*}"* ; do
-  if [[ $file == *srt ]];
-  then
-    ${SCRIPT_PATH}/srtlang-detect.py -r -q -s "${file}"
+echo "${files}" | jq -c '.[]' | while read -r file; do
+  file=$(sed -e 's/"//g' <<<"${file}")
+  if [[ $file == *srt ]]; then
+    ${SCRIPT_PATH}/srtlangdetect.py -r -q -s "${file}"
   fi
 done

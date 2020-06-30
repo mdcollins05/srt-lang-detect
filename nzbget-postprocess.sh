@@ -11,10 +11,10 @@
 ##############################################################################
 #### OPTIONS                                                               ###
 
-# Path to directory that contains the srtlangedit.py file
+# Path to directory that contains the srtlangdetect.py file
 #
 # No trailing slash
-#SRTAUTOEDIT_PATH=
+#SRTLANGDETECT_PATH=
 
 # Script arguments
 #SCRIPT_ARGS=-s -q
@@ -25,7 +25,7 @@
 read -r -a script_args <<< "$NZBPO_SCRIPT_ARGS"
 
 echo "Running post-process srt-lang-detect on files..."
-"${NZBPO_SRTAUTOEDIT_PATH}/srtlangedit.py" -r "${script_args[@]}" "${NZBPP_DIRECTORY}"
+"${NZBPO_SRTLANGDETECT_PATH}/srtlangdetect.py" -r "${script_args[@]}" "${NZBPP_DIRECTORY}"
 
 # Exit good no matter what
 exit 93
