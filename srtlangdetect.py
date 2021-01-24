@@ -93,9 +93,10 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     new_language = sub_detection_results[0][0]
     new_language_confidence = sub_detection_results[0][1]
 
-    # Try not to change the language in the filename if we can avoid it
-    if file_language != "Unknown":
-        new_language = file_language
+    # Commented out because this doesn't do whatever I'd hoped it would do and instead ignores the detected language :facepalm:
+    ## Try not to change the language in the filename if we can avoid it
+    #if file_language != "Unknown":
+    #    new_language = file_language
 
     if new_language is False:
         if verbose or summary:
