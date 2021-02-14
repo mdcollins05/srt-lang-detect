@@ -17,7 +17,7 @@
 #SRTLANGDETECT_PATH=
 
 # Script arguments
-#SCRIPT_ARGS=-s -q
+#SCRIPT_ARGS=-s -q -2 -k eng
 
 ### NZBGET POST-PROCESSING SCRIPT                                          ###
 ##############################################################################
