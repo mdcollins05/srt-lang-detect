@@ -103,14 +103,46 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
             print("Cannot detect language of the subtitles in {0}".format(file))
         return True
 
-    if args.two_letter:
-        new_language = to_2_letter_lang(new_language)
-    elif args.three_letter:
+    if args.three_letter:
         new_language = to_3_letter_lang(new_language)
+    else:
+        new_language = to_2_letter_lang(new_language)
 
     new_filename = get_new_filename(
         file, new_language, file_language, forced_subs, verbose
     )
+
+    if args.keep_only:
+        keep_langs = []
+        for lang in args.keep_only:
+            if args.three_letter:
+                l = to_3_letter_lang(lang.lower())
+            else:
+                l = to_2_letter_lang(lang.lower())
+
+            if l: # Weed out invalid languages passed in
+                keep_langs.append(l)
+
+        if new_language not in keep_langs:
+            if int(new_language_confidence) >= args.require_confidence:
+                if dry_run:
+                    if verbose:
+                        print(
+                            "Confidence of {0} equal or higher than required value to delete ({1})".format(
+                                int(new_language_confidence), args.require_confidence
+                            )
+                        )
+                    print(
+                        "Would delete file '{0}'".format(new_filename)
+                    )
+                if not dry_run:
+                    os.remove(file) # We haven't yet renamed, so remove the old file
+                    if verbose or summary:
+                        print(
+                            "Deleted file '{0}'".format(file)
+                        )
+
+                return True
 
     if new_filename == file:
         if verbose or summary:
@@ -157,11 +189,17 @@ def parse_args():
         help="The default is to do a dry-run. You must specify this option to rename files!",
     )
     argsparser.add_argument(
+        "--keep-only",
+        "-k",
+        action="append",
+        help="One or more languages to only keep. If `--rename-files` is specified, this will delete any subtitle files that don't match the languages specified!",
+    )
+    argsparser.add_argument(
         "--require-confidence",
         "-c",
         default=50,
         type=check_valid_percentage,
-        help="Require a confidence percentage equal or higher than the provided value to rename (default 50) (valid range 1-100)",
+        help="Require a confidence percentage equal or higher than the provided value to delete or rename a file (default 50) (valid range 1-100)",
     )
     two_three_group = argsparser.add_mutually_exclusive_group()
     two_three_group.add_argument(
