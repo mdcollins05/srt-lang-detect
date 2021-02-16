@@ -71,7 +71,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
             print("No subtitles found in {0}".format(file))
         return True
 
-    file_language, forced_subs = get_filename_language(file)
+    file_language, forced_subs, numbered_file = get_filename_language(file)
     sub_detection_results = parse_detect_langs(detect_langs(full_subtitle_text))
     if verbose or summary:
         file_language_long = to_lang_name(file_language)
@@ -109,7 +109,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         new_language = to_2_letter_lang(new_language)
 
     new_filename = get_new_filename(
-        file, new_language, file_language, forced_subs, verbose
+        file, new_language, file_language, forced_subs, numbered_file, verbose
     )
 
     if args.keep_only:
@@ -239,10 +239,17 @@ def get_filename_language(full_path):
     filename = os.path.basename(full_path).split(".")
 
     forced = False
+    numbered = False
     sub_lang = filename[-2].lower()
 
     if sub_lang == "forced":
         forced = True
+        sub_lang = filename[-3].lower()
+        if sub_lang.isnumeric():
+            numbered = True
+            sub_lang = filename[-4].lower()
+    elif sub_lang.isnumeric():
+        numbered = True
         sub_lang = filename[-3].lower()
 
     if len(sub_lang) == 2 or len(sub_lang) == 3:
@@ -251,10 +258,10 @@ def get_filename_language(full_path):
     else:
         sub_lang = "Unknown"
 
-    return (sub_lang, forced)
+    return (sub_lang, forced, numbered)
 
 
-def get_new_filename(full_path, language, file_language, forced, verbose):
+def get_new_filename(full_path, language, file_language, forced, numbered, verbose):
     # Our file output should look like:
     # showormovietitle.(count).(lang).(forced).srt
     # count and forced may or may not be included as needed
@@ -265,6 +272,11 @@ def get_new_filename(full_path, language, file_language, forced, verbose):
 
     if not forced:
         index = -2
+        if numbered:
+            del filename[-2] #Remove the number from the filename
+    else:
+        if numbered:
+            del filename[-3]
 
     if file_language != language:
         if file_language == "Unknown":
