@@ -1,3 +1,2 @@
+charset-normalizer == 2.0.12
 iso639 == 0.1.4
-langdetect == 1.0.8
-srt == 3.0.0
