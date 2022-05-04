@@ -4,9 +4,8 @@ import argparse
 import os
 import sys
 
+import charset_normalizer
 import iso639
-import srt
-from langdetect import detect_langs
 
 
 def main():
@@ -46,33 +45,21 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         print("Parsing '{0}'...".format(file))
 
     try:
-        original_subtitles = None
-        with open(file, "r", encoding="utf-8") as filehandler:
-            original_subtitles = filehandler.read()
-    except:
+        charset_matches = charset_normalizer.from_path(file)
+    except OSError:
         print()
         print("Couldn't open file '{0}'".format(file))
         return False
 
-    try:
-        original_subtitles = list(srt.parse(original_subtitles))
-    except:
-        print()
-        print("Trouble parsing subtitles in '{0}'".format(file))
-        return False
-
-    full_subtitle_text = ""
-
-    for i in range(len(original_subtitles)):
-        full_subtitle_text += original_subtitles[i].content
-
-    if len(original_subtitles) == 0:
+    is_file_empty = len(charset_matches) == 1 and len(charset_matches[0].raw) == 0
+    if is_file_empty:
         if verbose or summary:
             print("No subtitles found in {0}".format(file))
         return True
 
     file_language, forced_subs, numbered_file = get_filename_language(file)
-    sub_detection_results = parse_detect_langs(detect_langs(full_subtitle_text))
+    sub_detection_results = parse_charset_matches(charset_matches)
+
     if verbose or summary:
         file_language_long = to_lang_name(file_language)
         if not file_language_long:
@@ -87,26 +74,23 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
             print("Subtitles identified as:")
             detect_langs_pretty(sub_detection_results)
 
-        #if summary:
-        #    print("Subtitles identified as: {0} ({1}%)".format(to_lang_name(sub_detection_results[0][0]), sub_detection_results[0][1]))
-
-    new_language = sub_detection_results[0][0]
-    new_language_confidence = sub_detection_results[0][1]
+    new_lang_name = sub_detection_results[0]["lang_name"]
+    new_language_confidence = sub_detection_results[0]["confidence"]
 
     # Commented out because this doesn't do whatever I'd hoped it would do and instead ignores the detected language :facepalm:
     ## Try not to change the language in the filename if we can avoid it
     #if file_language != "Unknown":
     #    new_language = file_language
 
-    if new_language is False:
+    if new_lang_name == "Unknown":
         if verbose or summary:
             print("Cannot detect language of the subtitles in {0}".format(file))
         return True
 
     if args.three_letter:
-        new_language = to_3_letter_lang(new_language)
+        new_language = to_3_letter_lang(new_lang_name)
     else:
-        new_language = to_2_letter_lang(new_language)
+        new_language = to_2_letter_lang(new_lang_name)
 
     new_filename = get_new_filename(
         file, new_language, file_language, forced_subs, numbered_file, verbose
@@ -317,66 +301,40 @@ def get_new_filename(full_path, language, file_language, forced, numbered, verbo
 
 
 def to_2_letter_lang(lang):
-    if len(lang) == 2:
-        if iso639.is_valid639_1(lang):
-            return lang
-
-    if len(lang) == 3:
-        if iso639.is_valid639_2(lang):
-            return iso639.to_iso639_1(lang)
-
-    return False
+    try:
+        return iso639.to_iso639_1(lang)
+    except iso639.NonExistentLanguageError:
+        return False
 
 
 def to_3_letter_lang(lang):
-    if len(lang) == 2:
-        if iso639.is_valid639_1(lang):
-            return iso639.to_iso639_2(lang)
-
-    if len(lang) == 3:
-        if iso639.is_valid639_2(lang):
-            return lang
-
-    return False
+    try:
+        return iso639.to_iso639_2(lang)
+    except iso639.NonExistentLanguageError:
+        return False
 
 
 def to_lang_name(lang):
-    if is_valid_lang(lang):
+    try:
         return iso639.to_name(lang)
-    else:
+    except iso639.NonExistentLanguageError:
         return False
 
 
-def is_valid_lang(lang):
-    if len(lang) == 2:
-        if iso639.is_valid639_1(lang):
-            return True
-    elif len(lang) == 3:
-        if iso639.is_valid639_2(lang):
-            return True
-    else:
-        return False
+def parse_charset_matches(charset_matches):
+    results = []
+    for match in charset_matches:
+        lang_name = match.language
+        confidence = charset_normalizer.detect(match.raw)["confidence"]
+        confidence_percent = round(float(confidence) * 100, 2)
+        results.append({"lang_name": lang_name, "confidence": confidence_percent})
 
-
-def parse_detect_langs(results):
-    new_results = []
-    for result in results:
-        result = str(result).split(":")
-        lang_name = to_2_letter_lang(result[0])
-        confidence = round(float(result[1]) * 100, 2)
-        new_results.append((lang_name, confidence))
-
-    return new_results
+    return results
 
 
 def detect_langs_pretty(results):
     for result in results:
-        if result[0] is False:
-            lang_name = "Unknown"
-        else:
-            lang_name = to_lang_name(result[0])
-        confidence = result[1]
-        print("{0}: {1}%".format(lang_name, confidence))
+        print("{0}: {1}%".format(result["lang_name"], result["confidence"]))
 
 
 if __name__ == "__main__":
