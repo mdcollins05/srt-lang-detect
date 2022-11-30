@@ -4,8 +4,12 @@ import argparse
 import os
 import sys
 
-import charset_normalizer
+import chardet
 import iso639
+import srt
+
+from langid.langid import LanguageIdentifier, model
+langid = LanguageIdentifier.from_modelstring(model, norm_probs=True)
 
 
 def main():
@@ -44,21 +48,46 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     if dry_run or verbose:
         print("Parsing '{0}'...".format(file))
 
+    subtitles_raw = ''
     try:
-        charset_matches = charset_normalizer.from_path(file)
-    except OSError:
+        # Try to read the file using UTF-8 encoding
+        with open(file, "r", encoding="utf-8") as filehandler:
+            subtitles_raw = filehandler.read()
+    except:
+        # If default encoding fails, try to detect actual encoding
+        raw_bytes = b""
+        with open(file, "rb") as filehandler:
+            raw_bytes = filehandler.read()
+        encoding = chardet.detect(raw_bytes)["encoding"]
+        try:
+            with open(file, "r", encoding=encoding) as filehandler:
+                subtitles_raw = filehandler.read()
+        except:
+            print()
+            print("Couldn't open file '{0}'".format(file))
+            return False
+
+    subtitles_objs = []
+    try:
+        subtitles_objs = list(srt.parse(subtitles_raw))
+    except:
         print()
-        print("Couldn't open file '{0}'".format(file))
+        print("Trouble parsing subtitles in '{0}'".format(file))
         return False
 
-    is_file_empty = len(charset_matches) == 1 and len(charset_matches[0].raw) == 0
-    if is_file_empty:
+    if len(subtitles_objs) == 0:
         if verbose or summary:
             print("No subtitles found in {0}".format(file))
         return True
 
+    subtitles = [sub.content for sub in subtitles_objs]
+    subtitles_text = ' '.join(subtitles)
+
     file_language, forced_subs, numbered_file = get_filename_language(file)
-    sub_detection_results = parse_charset_matches(charset_matches)
+    classification = langid.classify(subtitles_text)
+    new_lang_code = classification[0]
+    new_lang_name = to_lang_name(classification[0])
+    new_language_confidence = classification[1] * 100
 
     if verbose or summary:
         file_language_long = to_lang_name(file_language)
@@ -72,10 +101,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                 print("Filename identified as: {0}".format(file_language_long))
 
             print("Subtitles identified as:")
-            detect_langs_pretty(sub_detection_results)
-
-    new_lang_name = sub_detection_results[0]["lang_name"]
-    new_language_confidence = sub_detection_results[0]["confidence"]
+            detect_langs_pretty([{"lang_name": new_lang_name, "confidence": new_language_confidence}])
 
     # Commented out because this doesn't do whatever I'd hoped it would do and instead ignores the detected language :facepalm:
     ## Try not to change the language in the filename if we can avoid it
@@ -88,9 +114,9 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         return True
 
     if args.three_letter:
-        new_language = to_3_letter_lang(new_lang_name)
+        new_language = to_3_letter_lang(new_lang_code)
     else:
-        new_language = to_2_letter_lang(new_lang_name)
+        new_language = to_2_letter_lang(new_lang_code)
 
     new_filename = get_new_filename(
         file, new_language, file_language, forced_subs, numbered_file, verbose
@@ -319,17 +345,6 @@ def to_lang_name(lang):
         return iso639.to_name(lang)
     except iso639.NonExistentLanguageError:
         return False
-
-
-def parse_charset_matches(charset_matches):
-    results = []
-    for match in charset_matches:
-        lang_name = match.language
-        confidence = charset_normalizer.detect(match.raw)["confidence"]
-        confidence_percent = round(float(confidence) * 100, 2)
-        results.append({"lang_name": lang_name, "confidence": confidence_percent})
-
-    return results
 
 
 def detect_langs_pretty(results):
