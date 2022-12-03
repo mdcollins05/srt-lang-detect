@@ -113,10 +113,16 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
             print("Cannot detect language of the subtitles in {0}".format(file))
         return True
 
-    if args.three_letter:
-        new_language = to_3_letter_lang(new_lang_code)
+        # Set a language code so we can continue if we want to keep only certain languages
+        if args.three_letter:
+            new_language = "unk"
+        else:
+            new_language = "un"
     else:
-        new_language = to_2_letter_lang(new_lang_code)
+        if args.three_letter:
+            new_language = to_3_letter_lang(new_lang_code)
+        else:
+            new_language = to_2_letter_lang(new_lang_code)
 
     new_filename = get_new_filename(
         file, new_language, file_language, forced_subs, numbered_file, verbose
@@ -173,13 +179,21 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                 )
             )
         if not dry_run:
-            os.rename(file, new_filename)
-            if verbose or summary:
-                print(
-                    "Renamed '{0}' to '{1}'".format(
-                        file, new_filename
+            if new_lang_name != "Unknown":
+                os.rename(file, new_filename)
+                if verbose or summary:
+                    print(
+                        "Renamed '{0}' to '{1}'".format(
+                            file, new_filename
+                        )
                     )
-                )
+            else:
+                if verbose or summary:
+                    print(
+                        "Would not rename '{0}' because the language is unknown".format(
+                            file
+                        )
+                    )
 
     return True
 
