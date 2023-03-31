@@ -9,6 +9,7 @@ import iso639
 import srt
 
 from langid.langid import LanguageIdentifier, model
+
 langid = LanguageIdentifier.from_modelstring(model, norm_probs=True)
 
 
@@ -36,7 +37,7 @@ def main():
                             args.dry_run,
                             args.quiet,
                             args.verbose,
-                            args
+                            args,
                         )
                         if args.verbose or args.summary:
                             print()
@@ -48,7 +49,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     if dry_run or verbose:
         print("Parsing '{0}'...".format(file))
 
-    subtitles_raw = ''
+    subtitles_raw = ""
     try:
         # Try to read the file using UTF-8 encoding
         with open(file, "r", encoding="utf-8") as filehandler:
@@ -81,7 +82,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         return True
 
     subtitles = [sub.content for sub in subtitles_objs]
-    subtitles_text = ' '.join(subtitles)
+    subtitles_text = " ".join(subtitles)
 
     file_language, forced_subs, numbered_file = get_filename_language(file)
     classification = langid.classify(subtitles_text)
@@ -101,11 +102,13 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                 print("Filename identified as: {0}".format(file_language_long))
 
             print("Subtitles identified as:")
-            detect_langs_pretty([{"lang_name": new_lang_name, "confidence": new_language_confidence}])
+            detect_langs_pretty(
+                [{"lang_name": new_lang_name, "confidence": new_language_confidence}]
+            )
 
     # Commented out because this doesn't do whatever I'd hoped it would do and instead ignores the detected language :facepalm:
     ## Try not to change the language in the filename if we can avoid it
-    #if file_language != "Unknown":
+    # if file_language != "Unknown":
     #    new_language = file_language
 
     if new_lang_name == "Unknown":
@@ -136,7 +139,7 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
             else:
                 l = to_2_letter_lang(lang.lower())
 
-            if l: # Weed out invalid languages passed in
+            if l:  # Weed out invalid languages passed in
                 keep_langs.append(l)
 
         if new_language not in keep_langs:
@@ -148,15 +151,11 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                                 int(new_language_confidence), args.require_confidence
                             )
                         )
-                    print(
-                        "Would delete file '{0}'".format(new_filename)
-                    )
+                    print("Would delete file '{0}'".format(new_filename))
                 if not dry_run:
-                    os.remove(file) # We haven't yet renamed, so remove the old file
+                    os.remove(file)  # We haven't yet renamed, so remove the old file
                     if verbose or summary:
-                        print(
-                            "Deleted file '{0}'".format(file)
-                        )
+                        print("Deleted file '{0}'".format(file))
 
                 return True
 
@@ -173,20 +172,12 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                         int(new_language_confidence), args.require_confidence
                     )
                 )
-            print(
-                "Would rename '{0}' to '{1}'".format(
-                    file, new_filename
-                )
-            )
+            print("Would rename '{0}' to '{1}'".format(file, new_filename))
         if not dry_run:
             if new_lang_name != "Unknown":
                 os.rename(file, new_filename)
                 if verbose or summary:
-                    print(
-                        "Renamed '{0}' to '{1}'".format(
-                            file, new_filename
-                        )
-                    )
+                    print("Renamed '{0}' to '{1}'".format(file, new_filename))
             else:
                 if verbose or summary:
                     print(
@@ -230,7 +221,10 @@ def parse_args():
         "--two-letter", "-2", action="store_true", help="Prefer 2 letter language code"
     )
     two_three_group.add_argument(
-        "--three-letter", "-3", action="store_true", help="Prefer 3 letter language code"
+        "--three-letter",
+        "-3",
+        action="store_true",
+        help="Prefer 3 letter language code",
     )
     argsparser.add_argument(
         "--summary", "-s", action="store_true", help="Provide a summary of the changes"
@@ -297,14 +291,14 @@ def get_new_filename(full_path, language, file_language, forced, numbered, verbo
     if not forced:
         index = -2
         if numbered:
-            del filename[-2] #Remove the number from the filename
+            del filename[-2]  # Remove the number from the filename
     else:
         if numbered:
             del filename[-3]
 
     if file_language != language:
         if file_language == "Unknown":
-            filename.insert(index+1 , language)
+            filename.insert(index + 1, language)
             adjusted_for_unknown = True
         else:
             filename[index] = language
@@ -319,7 +313,7 @@ def get_new_filename(full_path, language, file_language, forced, numbered, verbo
             if len(filename[index]) == 1 and filename[index].isdigit():
                 del filename[index]
         elif i == 1:
-            filename.insert(index+1, str(i))
+            filename.insert(index + 1, str(i))
         elif i >= 2:
             filename[index] = str(i)
 
@@ -330,7 +324,9 @@ def get_new_filename(full_path, language, file_language, forced, numbered, verbo
 
         if not os.path.exists(new_filename):
             if verbose:
-                print("{0} does not exist on disk".format(os.path.basename(new_filename)))
+                print(
+                    "{0} does not exist on disk".format(os.path.basename(new_filename))
+                )
             break
         else:
             if verbose:
