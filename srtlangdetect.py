@@ -414,7 +414,7 @@ def percent_sdh(input_text):
         if sdh_regex.match(line):
             sdh_count += 1
 
-    return sdh_count / total_count
+    return round(sdh_count / total_count, 2)
 
 def to_2_letter_lang(lang):
     try:

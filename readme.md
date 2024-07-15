@@ -21,35 +21,36 @@ You can manually run `srtlangdetect.py` from the command line.
 ```
 $ ./srtlangdetect.py --help
 usage: srtlangdetect.py [-h] [--rename-files] [--keep-only KEEP_ONLY]
-                        [--require-confidence REQUIRE_CONFIDENCE]
-                        [--two-letter | --three-letter] [--summary]
-                        [--quiet | --verbose]
-                        [srt [srt ...]]
+                        [--require-lang-confidence REQUIRE_LANG_CONFIDENCE] [--min-sdh-confidence MIN_SDH_CONFIDENCE]
+                        [--max-sdh-confidence MAX_SDH_CONFIDENCE] [--reject-sdh-confidence REJECT_SDH_CONFIDENCE]
+                        [--two-letter | --three-letter] [--summary] [--quiet | --verbose]
+                        [srt ...]
 
 Detect the language of subtitle(srt) file(s)
 
 positional arguments:
-  srt                   One or more subtitle files or directories to operate
-                        on
+  srt                   One or more subtitle files or directories to operate on
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --rename-files, -r    The default is to do a dry-run. You must specify this
-                        option to rename files!
+  --rename-files, -r    The default is to do a dry-run. You must specify this option to rename files!
   --keep-only KEEP_ONLY, -k KEEP_ONLY
-                        One or more languages to only keep. If `--rename-
-                        files` is specified, this will delete any subtitle
-                        files that don't match the languages specified!
-  --require-confidence REQUIRE_CONFIDENCE, -c REQUIRE_CONFIDENCE
-                        Require a confidence percentage equal or higher than
-                        the provided value to delete or rename a file (default
-                        50) (valid range 1-100)
+                        One or more languages to only keep. If `--rename-files` is specified, this will delete any
+                        subtitle files that don't match the languages specified!
+  --require-lang-confidence REQUIRE_LANG_CONFIDENCE, -c REQUIRE_LANG_CONFIDENCE
+                        Require a confidence percentage equal or higher than the provided value to delete or rename a
+                        file based on language (default 50) (valid range 1-100)
+  --min-sdh-confidence MIN_SDH_CONFIDENCE
+                        Minimum SDH confidence to consider a file as SDH (default 5) (valid range 1-100)
+  --max-sdh-confidence MAX_SDH_CONFIDENCE
+                        Maximum SDH confidence to consider a file as SDH (default 85) (valid range 1-100)
+  --reject-sdh-confidence REJECT_SDH_CONFIDENCE
+                        Reject SDH confidence to remove SDH flag (default 2) (valid range 1-100)
   --two-letter, -2      Prefer 2 letter language code
   --three-letter, -3    Prefer 3 letter language code
   --summary, -s         Provide a summary of the changes
   --quiet, -q           Quiet output. Only errors will be printed on screen
-  --verbose, -v         Verbose output. Lines that have been modified will be
-                        printed on screen
+  --verbose, -v         Verbose output. Lines that have been modified will be printed on screen
 ```
 
 Please note, the default action is a dry-run! You _must_ specify `--rename-files` to rename the subtitle file(s).
