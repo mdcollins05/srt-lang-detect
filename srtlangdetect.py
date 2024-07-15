@@ -130,12 +130,12 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
             new_language = to_2_letter_lang(new_lang_code)
 
     if sdh_confidence >= args.min_sdh_confidence and sdh_confidence <= args.max_sdh_confidence and special_subs != "sdh":
-        if verbose or summary:
+        if verbose:
             print("Marking file as SDH")
             special_subs = "sdh"
 
     if sdh_confidence <= args.reject_sdh_confidence and special_subs == "sdh":
-        if verbose or summary:
+        if verbose:
             print("Removing SDH flag")
             special_subs = ""
 
