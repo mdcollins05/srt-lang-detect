@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+import re
 
 import chardet
 import iso639
@@ -24,7 +25,7 @@ def main():
 
     for srt in args.srt:
         if os.path.isfile(srt):
-            action_taken = lang_detect_srt(
+            lang_detect_srt(
                 srt, args.summary, args.dry_run, args.quiet, args.verbose, args
             )
         elif os.path.isdir(srt):
@@ -44,7 +45,7 @@ def main():
         else:
             print("Subtitle file/path '{0}' doesn't exist".format(srt))
 
-
+# This function is way too long but it stays for now.
 def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     if dry_run or verbose:
         print("Parsing '{0}'...".format(file))
@@ -82,9 +83,12 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         return True
 
     subtitles = [sub.content for sub in subtitles_objs]
-    subtitles_text = " ".join(subtitles)
+    subtitles_text = "\n\n".join(subtitles)
 
-    file_language, forced_subs, numbered_file = get_filename_language(file)
+    file_language, special_subs, forced_subs = get_filename_language(file)
+
+    sdh_confidence = percent_sdh(subtitles_text) * 100
+
     classification = langid.classify(subtitles_text)
     new_lang_code = classification[0]
     new_lang_name = to_lang_name(classification[0])
@@ -96,25 +100,23 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
             file_language_long = file_language
 
         if verbose:
+            message = "Filename identified as: {0}".format(file_language_long)
+            if special_subs != "":
+                message +=" ({0})".format(special_subs)
             if forced_subs:
-                print("Filename identified as: {0} (Forced)".format(file_language_long))
-            else:
-                print("Filename identified as: {0}".format(file_language_long))
+                message +=" (Forced)"
+            print(message)
 
             print("Subtitles identified as:")
             detect_langs_pretty(
                 [{"lang_name": new_lang_name, "confidence": new_language_confidence}]
             )
 
-    # Commented out because this doesn't do whatever I'd hoped it would do and instead ignores the detected language :facepalm:
-    ## Try not to change the language in the filename if we can avoid it
-    # if file_language != "Unknown":
-    #    new_language = file_language
+            print("SDH confidence: {0}%".format(sdh_confidence))
 
     if new_lang_name == "Unknown":
         if verbose or summary:
             print("Cannot detect language of the subtitles in {0}".format(file))
-        return True
 
         # Set a language code so we can continue if we want to keep only certain languages
         if args.three_letter:
@@ -127,8 +129,18 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         else:
             new_language = to_2_letter_lang(new_lang_code)
 
+    if sdh_confidence >= args.min_sdh_confidence and sdh_confidence <= args.max_sdh_confidence and special_subs != "sdh":
+        if verbose or summary:
+            print("Marking file as SDH")
+            special_subs = "sdh"
+
+    if sdh_confidence <= args.reject_sdh_confidence and special_subs == "sdh":
+        if verbose or summary:
+            print("Removing SDH flag")
+            special_subs = ""
+
     new_filename = get_new_filename(
-        file, new_language, file_language, forced_subs, numbered_file, verbose
+        file, new_language, file_language, special_subs, forced_subs, verbose
     )
 
     if args.keep_only:
@@ -143,12 +155,12 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                 keep_langs.append(l)
 
         if new_language not in keep_langs:
-            if int(new_language_confidence) >= args.require_confidence:
+            if int(new_language_confidence) >= args.require_lang_confidence:
                 if dry_run:
                     if verbose:
                         print(
                             "Confidence of {0} equal or higher than required value to delete ({1})".format(
-                                int(new_language_confidence), args.require_confidence
+                                int(new_language_confidence), args.require_lang_confidence
                             )
                         )
                     print("Would delete file '{0}'".format(new_filename))
@@ -164,12 +176,12 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
             print("No changes neccessary to {0}".format(file))
         return True
 
-    if int(new_language_confidence) >= args.require_confidence:
+    if int(new_language_confidence) >= args.require_lang_confidence:
         if dry_run:
             if verbose:
                 print(
                     "Confidence of {0} equal or higher than required value to rename ({1})".format(
-                        int(new_language_confidence), args.require_confidence
+                        int(new_language_confidence), args.require_lang_confidence
                     )
                 )
             print("Would rename '{0}' to '{1}'".format(file, new_filename))
@@ -209,12 +221,33 @@ def parse_args():
         action="append",
         help="One or more languages to only keep. If `--rename-files` is specified, this will delete any subtitle files that don't match the languages specified!",
     )
+    # Not implemented yet
+    # argsparser.add_argument(
+    #     "--keep-only-one",
+    #     action="append",
+    #     help="Keep only one file of each language specified in `--keep-only`. If `--rename-files` is specified, this will delete any additional files beyond the first one!",
+    # )
     argsparser.add_argument(
-        "--require-confidence",
+        "--require-lang-confidence",
         "-c",
         default=50,
         type=check_valid_percentage,
-        help="Require a confidence percentage equal or higher than the provided value to delete or rename a file (default 50) (valid range 1-100)",
+        help="Require a confidence percentage equal or higher than the provided value to delete or rename a file based on language(default 50) (valid range 1-100)",
+    )
+    argsparser.add_argument(
+        "--min-sdh-confidence",
+        default=15,
+        help="Minimum SDH confidence to consider a file as SDH (default 15)",
+    )
+    argsparser.add_argument(
+        "--max-sdh-confidence",
+        default=85,
+        help="Maximum SDH confidence to consider a file as SDH (default 85)",
+    )
+    argsparser.add_argument(
+        "--reject-sdh-confidence",
+        default=5,
+        help="Reject SDH confidence to remove SDH flag (default 5)",
     )
     two_three_group = argsparser.add_mutually_exclusive_group()
     two_three_group.add_argument(
@@ -254,21 +287,35 @@ def check_valid_percentage(value):
 
 
 def get_filename_language(full_path):
-    filename = os.path.basename(full_path).split(".")
+    # Split the filename by periods and reverse it so we can check the last parts first
+    filename = os.path.basename(full_path).split(".")[::-1]
 
     forced = False
-    numbered = False
-    sub_lang = filename[-2].lower()
+    special = ""
+    sub_lang = "Unknown"
 
-    if sub_lang == "forced":
-        forced = True
-        sub_lang = filename[-3].lower()
-        if sub_lang.isnumeric():
-            numbered = True
-            sub_lang = filename[-4].lower()
-    elif sub_lang.isnumeric():
-        numbered = True
-        sub_lang = filename[-3].lower()
+    # Check each part of the filename for the language, forced, sdh, or numbering.
+    # Break out of the loop if none of those are found, as we assume everything else is
+    # part of the title
+    for part in filename:
+        if part.lower() == "srt":
+            continue
+        if part.lower() == "forced":
+            forced = True
+            continue
+        elif part.lower() == "cc":
+            special = "cc"
+            continue
+        elif part.lower() == "sdh":
+            special = "sdh"
+            continue
+        elif len(part) == 2 or len(part) == 3:
+            sub_lang = part.lower()
+            continue
+        elif re.match(r"\d+", part):
+            continue
+        else:
+            break
 
     if len(sub_lang) == 2 or len(sub_lang) == 3:
         if not iso639.is_valid639_1(sub_lang) and not iso639.is_valid639_2(sub_lang):
@@ -276,48 +323,63 @@ def get_filename_language(full_path):
     else:
         sub_lang = "Unknown"
 
-    return (sub_lang, forced, numbered)
+    return (sub_lang, special, forced)
 
 
-def get_new_filename(full_path, language, file_language, forced, numbered, verbose):
+def get_new_filename(full_path, language, file_language, special, forced, verbose):
     # Our file output should look like:
-    # showormovietitle.(count).(lang).(forced).srt
-    # count and forced may or may not be included as needed
+    # showormovietitle.(count).(lang).(special).(forced).srt
+    # count, special and forced may or may not be included as needed
     directory = os.path.dirname(full_path)
-    filename = os.path.basename(full_path).split(".")
+    filename = os.path.basename(full_path).split(".")[::-1]
 
-    index = -3
-
-    if not forced:
-        index = -2
-        if numbered:
-            del filename[-2]  # Remove the number from the filename
-    else:
-        if numbered:
-            del filename[-3]
-
-    if file_language != language:
-        if file_language == "Unknown":
-            filename.insert(index + 1, language)
-            adjusted_for_unknown = True
+    # Remove all the parts we will reconstruct
+    # Use a copy of the list, because modifying it while iterating will cause issues
+    for part in filename[:]:
+        if part.lower() == "srt":
+            filename.remove(part)
+        elif part.lower() == "forced":
+            filename.remove(part)
+        elif re.match(r"^\d{1,2}$", part):
+            # Remove if 1 or 2 digits long, as it may be the count of unique subtitles
+            # Longer numbers are assumed to be part of the title or otherwise should be kept
+            filename.remove(part)
+        elif part.lower() == "sdh":
+            filename.remove(part)
+        elif part.lower() == "cc":
+            filename.remove(part)
+        elif part == file_language:
+            filename.remove(part)
+        elif part == language:
+            filename.remove(part)
         else:
-            filename[index] = language
+            # We want to be as careful as possible, so once we reach parts we don't recognize, we bail
+            break
+
+    # Flip it and reverse it
+    filename = filename[::-1]
 
     # We do not want to overwrite any existing files, so check if a file exists on disk with the proposed name
     # and increment if it already does
     i = 0
 
     while True:
-        if i == 0:
-            index -= 1
-            if len(filename[index]) == 1 and filename[index].isdigit():
-                del filename[index]
-        elif i == 1:
-            filename.insert(index + 1, str(i))
-        elif i >= 2:
-            filename[index] = str(i)
+        new_filename = filename.copy()
 
-        new_filename = os.path.join(directory, ".".join(filename))
+        if i >= 1:
+            new_filename.append(str(i))
+        
+        new_filename.append(language)
+        
+        if special:
+            new_filename.append(special)
+
+        if forced:
+            new_filename.append("forced")
+        
+        new_filename.append("srt")
+
+        new_filename = os.path.join(directory, ".".join(new_filename))
 
         if full_path == new_filename:
             break
@@ -325,16 +387,31 @@ def get_new_filename(full_path, language, file_language, forced, numbered, verbo
         if not os.path.exists(new_filename):
             if verbose:
                 print(
-                    "{0} does not exist on disk".format(os.path.basename(new_filename))
+                    "  {0} does not exist on disk".format(os.path.basename(new_filename))
                 )
             break
         else:
             if verbose:
-                print("{0} already exists".format(os.path.basename(new_filename)))
+                print("  {0} already exists".format(os.path.basename(new_filename)))
             i += 1
 
-    return os.path.join(directory, ".".join(filename))
+    return new_filename
 
+def percent_sdh(input_text):
+    sdh_regex = re.compile(r"\[.*\]")
+
+    # Remove empty lines
+    input_text = re.sub(r"\n\s*\n", "\n", input_text)
+
+    sdh_count = 0
+    total_count = 0
+
+    for line in input_text.split("\n"):
+        total_count += 1
+        if sdh_regex.match(line):
+            sdh_count += 1
+
+    return sdh_count / total_count
 
 def to_2_letter_lang(lang):
     try:
@@ -359,7 +436,7 @@ def to_lang_name(lang):
 
 def detect_langs_pretty(results):
     for result in results:
-        print("{0}: {1}%".format(result["lang_name"], result["confidence"]))
+        print("  {0}: {1}%".format(result["lang_name"], result["confidence"]))
 
 
 if __name__ == "__main__":

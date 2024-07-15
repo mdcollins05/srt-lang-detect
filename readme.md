@@ -2,7 +2,11 @@
 
 Automatically detect the language of the subtitles in a file and rename if necessary.
 
-This script can also change from 2 to 3 letter language codes or back. It will also re-number subtitle files if possible. (See the `--two-letter` or `--three-letter` arguments)
+This script can also change from 2 to 3 letter language codes or back. It will also re-number subtitle files if possible. (See the `--two-letter` or `--three-letter` arguments).
+
+Naming of the subtitles is based off of [Plex's guide for subtitle naming](https://support.plex.tv/articles/200471133-adding-local-subtitles-to-your-media/).
+
+I've tried to be as flexible as possible in determining the parts of an existing subtitle file but I've mostly tested with files already renamed by Sonarr or Radarr, following [Trash Guides](https://trash-guides.info/) recommended naming for [Sonarr](https://trash-guides.info/Sonarr/Sonarr-recommended-naming-scheme/) and [Radarr](https://trash-guides.info/Radarr/Radarr-recommended-naming-scheme/). This script doesn't require the above naming schemes to be used but be aware that some formats may produce weird results when using this script.
 
 ## Installation
 
