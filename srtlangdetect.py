@@ -232,25 +232,25 @@ def parse_args():
         "-c",
         default=50,
         type=check_valid_percentage,
-        help="Require a confidence percentage equal or higher than the provided value to delete or rename a file based on language (default 50) (valid range 1-100)",
+        help="Require a confidence percentage equal or higher than the provided value to delete or rename a file based on language (default 50) (valid range 0-100)",
     )
     argsparser.add_argument(
         "--min-sdh-confidence",
         default=5,
         type=check_valid_percentage,
-        help="Minimum SDH confidence to consider a file as SDH (default 5) (valid range 1-100)",
+        help="Minimum SDH confidence to consider a file as SDH (default 5) (valid range 0-100)",
     )
     argsparser.add_argument(
         "--max-sdh-confidence",
         default=85,
         type=check_valid_percentage,
-        help="Maximum SDH confidence to consider a file as SDH (default 85) (valid range 1-100)",
+        help="Maximum SDH confidence to consider a file as SDH (default 85) (valid range 0-100)",
     )
     argsparser.add_argument(
         "--reject-sdh-confidence",
-        default=2,
+        default=1,
         type=check_valid_percentage,
-        help="Reject SDH confidence to remove SDH flag (default 2) (valid range 1-100)",
+        help="Reject SDH confidence to remove SDH flag (default 1) (valid range 0-100)",
     )
     two_three_group = argsparser.add_mutually_exclusive_group()
     two_three_group.add_argument(
@@ -284,7 +284,7 @@ def parse_args():
 
 def check_valid_percentage(value):
     ivalue = int(value)
-    if 1 <= ivalue <= 100:
+    if 0 <= ivalue <= 100:
         raise argparse.ArgumentTypeError("{0} is an invalid value".format(value))
     return ivalue
 

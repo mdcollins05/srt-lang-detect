@@ -39,13 +39,13 @@ options:
                         subtitle files that don't match the languages specified!
   --require-lang-confidence REQUIRE_LANG_CONFIDENCE, -c REQUIRE_LANG_CONFIDENCE
                         Require a confidence percentage equal or higher than the provided value to delete or rename a
-                        file based on language (default 50) (valid range 1-100)
+                        file based on language (default 50) (valid range 0-100)
   --min-sdh-confidence MIN_SDH_CONFIDENCE
-                        Minimum SDH confidence to consider a file as SDH (default 5) (valid range 1-100)
+                        Minimum SDH confidence to consider a file as SDH (default 5) (valid range 0-100)
   --max-sdh-confidence MAX_SDH_CONFIDENCE
-                        Maximum SDH confidence to consider a file as SDH (default 85) (valid range 1-100)
+                        Maximum SDH confidence to consider a file as SDH (default 85) (valid range 0-100)
   --reject-sdh-confidence REJECT_SDH_CONFIDENCE
-                        Reject SDH confidence to remove SDH flag (default 2) (valid range 1-100)
+                        Reject SDH confidence to remove SDH flag (default 1) (valid range 0-100)
   --two-letter, -2      Prefer 2 letter language code
   --three-letter, -3    Prefer 3 letter language code
   --summary, -s         Provide a summary of the changes
