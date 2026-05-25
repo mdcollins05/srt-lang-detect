@@ -45,6 +45,7 @@ def main():
         else:
             print("Subtitle file/path '{0}' doesn't exist".format(srt))
 
+
 # This function is way too long but it stays for now.
 def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
     if dry_run or verbose:
@@ -102,9 +103,9 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         if verbose:
             message = "Filename identified as: {0}".format(file_language_long)
             if special_subs != "":
-                message +=" ({0})".format(special_subs)
+                message += " ({0})".format(special_subs)
             if forced_subs:
-                message +=" (Forced)"
+                message += " (Forced)"
             print(message)
 
             print("Subtitles identified as:")
@@ -129,7 +130,11 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
         else:
             new_language = to_2_letter_lang(new_lang_code)
 
-    if sdh_confidence >= args.min_sdh_confidence and sdh_confidence <= args.max_sdh_confidence and special_subs != "sdh":
+    if (
+        sdh_confidence >= args.min_sdh_confidence
+        and sdh_confidence <= args.max_sdh_confidence
+        and special_subs != "sdh"
+    ):
         if verbose:
             print("Marking file as SDH")
             special_subs = "sdh"
@@ -160,7 +165,8 @@ def lang_detect_srt(file, summary, dry_run, quiet, verbose, args):
                     if verbose:
                         print(
                             "Confidence of {0} equal or higher than required value to delete ({1})".format(
-                                int(new_language_confidence), args.require_lang_confidence
+                                int(new_language_confidence),
+                                args.require_lang_confidence,
                             )
                         )
                     print("Would delete file '{0}'".format(new_filename))
@@ -371,15 +377,15 @@ def get_new_filename(full_path, language, file_language, special, forced, verbos
 
         if i >= 1:
             new_filename.append(str(i))
-        
+
         new_filename.append(language)
-        
+
         if special:
             new_filename.append(special)
 
         if forced:
             new_filename.append("forced")
-        
+
         new_filename.append("srt")
 
         new_filename = os.path.join(directory, ".".join(new_filename))
@@ -390,7 +396,9 @@ def get_new_filename(full_path, language, file_language, special, forced, verbos
         if not os.path.exists(new_filename):
             if verbose:
                 print(
-                    "  {0} does not exist on disk".format(os.path.basename(new_filename))
+                    "  {0} does not exist on disk".format(
+                        os.path.basename(new_filename)
+                    )
                 )
             break
         else:
@@ -399,6 +407,7 @@ def get_new_filename(full_path, language, file_language, special, forced, verbos
             i += 1
 
     return new_filename
+
 
 def percent_sdh(input_text):
     sdh_regex = re.compile(r"(\[.*\]|<.*>|\(.*\))")
@@ -415,6 +424,7 @@ def percent_sdh(input_text):
             sdh_count += 1
 
     return round(sdh_count / total_count, 2)
+
 
 def to_2_letter_lang(lang):
     try:
